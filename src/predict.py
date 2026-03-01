@@ -4,12 +4,19 @@ import numpy as np
 
 
 def predict_demand(station_id, forecast_date, daily_data):
-
+    """
+    Predict next-day energy demand for a given station and forecast date.
+    """
+    # -----------------------------
+    # 1. Load trained artifacts
+    # -----------------------------
     model = joblib.load("models/daily_model.pkl")
     le = joblib.load("models/station_encoder.pkl")
 
     forecast_date = pd.to_datetime(forecast_date)
-
+    # -----------------------------
+    # 2. Filter station data
+    # -----------------------------
     station_df = daily_data[daily_data["stationID"] == station_id]
     station_df = station_df.sort_values("date")
 
@@ -21,7 +28,9 @@ def predict_demand(station_id, forecast_date, daily_data):
 
     if len(station_df) < 3:
         return "Need at least 3 historical days."
-
+    # -----------------------------
+    # 3. Extract recent history
+    # -----------------------------
     last_days = station_df.tail(14)  # take up to 14 if available
 
     # Safe lag extraction
@@ -33,13 +42,19 @@ def predict_demand(station_id, forecast_date, daily_data):
 
     rolling_7 = last_days["daily_kwh"].tail(7).mean()
     rolling_14 = last_days["daily_kwh"].mean()
-
+    # -----------------------------
+    # 4. Calendar features
+    # -----------------------------
     day_of_week = forecast_date.dayofweek
     month = forecast_date.month
     is_weekend = 1 if day_of_week >= 5 else 0
-
+    # -----------------------------
+    # 5. Encode station
+    # -----------------------------
     station_encoded = le.transform([station_id])[0]
-
+    # -----------------------------
+    # 6. Build model input
+    # -----------------------------
     input_data = pd.DataFrame([{
         "station_encoded": station_encoded,
         "lag_1": lag_1,
@@ -51,7 +66,9 @@ def predict_demand(station_id, forecast_date, daily_data):
         "month": month,
         "is_weekend": is_weekend
     }])
-
+    # -----------------------------
+    # 7. Predict
+    # -----------------------------
     pred_log = model.predict(input_data)
     prediction = np.expm1(pred_log)[0]
 
