@@ -1,3 +1,4 @@
+import os 
 import numpy as np
 import joblib
 from sklearn.preprocessing import LabelEncoder
@@ -9,6 +10,7 @@ def train_daily_model(daily_model_df):
     """
     Train XGBoost model for next-day forecasting.
     """
+    daily_df = daily_df.sort_values("date").reset_index(drop=True)
 
     upper_limit = daily_model_df["target_next_day"].quantile(0.95)
     # -----------------------------
@@ -68,10 +70,11 @@ def train_daily_model(daily_model_df):
         max_depth=7,
         subsample=0.8,
         colsample_bytree=0.8,
-        random_state=42
+        random_state=42,
+        n_jobs=-1
     )
 
-    model.fit(X_train, y_train_log)
+    model.fit(X_train, y_train_log,verbose=False)
     # -----------------------------
     # 7. Predict & inverse transform
     # -----------------------------
@@ -89,3 +92,4 @@ def train_daily_model(daily_model_df):
     # 9. Save model & encoder
     # -----------------------------
     print("Model saved successfully.")
+    return model, le
