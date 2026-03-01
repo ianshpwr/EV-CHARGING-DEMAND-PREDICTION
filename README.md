@@ -1,4 +1,4 @@
-# 🔋 EV Charging Demand Forecasting
+#  EV Charging Demand Forecasting
 
 A machine learning-based time-series forecasting system designed to predict EV charging demand at station and system levels.
 
@@ -6,7 +6,7 @@ This project implements feature-engineered forecasting models using ensemble lea
 
 ---
 
-## 🚀 Project Overview
+##  Project Overview
 
 With increasing EV adoption, accurate charging demand forecasting is essential for:
 
@@ -26,24 +26,24 @@ This project builds a complete pipeline including:
 
 ---
 
-## ⚙️ Feature Engineering
+##  Feature Engineering
 
 The forecasting models use advanced time-series features:
 
-### ⏱ Time Features
+###  Time Features
 - Hour of day
 - Day of week
 - Month
 - Weekend indicator
 - Cyclical encoding (sin/cos transformation)
 
-### 🔁 Lag Features
+### Lag Features
 - lag_1 (previous period demand)
 - lag_7 (weekly dependency)
 - lag_24 (daily seasonality)
 - lag_14 (extended weekly memory)
 
-### 📊 Rolling Statistics
+###  Rolling Statistics
 - Rolling mean (7-day, 14-day, 24-hour)
 - Volatility estimation
 
@@ -51,7 +51,7 @@ These features allow the model to capture temporal dependencies, seasonality, an
 
 ---
 
-## 🧠 Modeling Approach
+##  Modeling Approach
 
 ### 1️⃣ Demand Occurrence Prediction
 Model: RandomForestClassifier  
@@ -68,7 +68,7 @@ Enhancements applied:
 
 ---
 
-## 📈 Model Performance
+##  Model Performance
 
 Below is the comparison between actual and predicted daily demand values:
 
@@ -83,7 +83,7 @@ Evaluation Metrics:
 
 ---
 
-## 📂 Project Structure
+##  Project Structure
 EV-Charging-Demand-Forecasting/
 │
 ├── data/
@@ -112,10 +112,11 @@ EV-Charging-Demand-Forecasting/
 
 ---
 
-## 💾 Model Persistence
+## Model Persistence
 
 Trained models are saved using joblib:
 
 ```python
 import joblib
 model = joblib.load("daily_model.pkl")
+
