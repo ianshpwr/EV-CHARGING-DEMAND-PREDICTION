@@ -5,6 +5,14 @@ import joblib
 import plotly.graph_objects as go
 import plotly.express as px
 from src.preprocessing import load_and_prepare_hourly, build_daily_dataset
+from src.eda_analysis import (
+    plot_historical_trend,
+    plot_monthly_trend,
+    plot_weekday_heatmap,
+    plot_top_stations,
+    plot_demand_distribution,
+    plot_system_trend
+)
 
 # ------------------------------------------------
 # Page Config
@@ -124,40 +132,10 @@ else:
 # ------------------------------------------------
 st.subheader("📈 Historical Trend")
 
-plot_df = station_df.tail(60).copy()
-plot_df["rolling_7"] = plot_df["daily_kwh"].rolling(7).mean()
-
-fig = go.Figure()
-
-fig.add_trace(go.Scatter(
-    x=plot_df["date"],
-    y=plot_df["daily_kwh"],
-    mode="lines",
-    name="Daily Demand"
-))
-
-fig.add_trace(go.Scatter(
-    x=plot_df["date"],
-    y=plot_df["rolling_7"],
-    mode="lines",
-    name="7-Day Rolling Avg"
-))
-
-# Add forecast marker if exists
-if st.session_state.prediction is not None:
-    fig.add_trace(go.Scatter(
-        x=[pd.to_datetime(selected_date)],
-        y=[st.session_state.prediction],
-        mode="markers",
-        marker=dict(size=12, color="red"),
-        name="Forecast"
-    ))
-
-fig.update_layout(
-    height=500,
-    template="plotly_dark",
-    xaxis_title="Date",
-    yaxis_title="Energy (kWh)"
+fig = plot_historical_trend(
+    station_df,
+    selected_date,
+    st.session_state.prediction
 )
 
 st.plotly_chart(fig, use_container_width=True)
@@ -180,93 +158,26 @@ if st.session_state.prediction is not None:
 # Monthly Trend
 # ------------------------------------------------
 st.subheader("📅 Monthly Average Demand")
-
-monthly = daily_data.groupby(
-    daily_data["date"].dt.month
-)["daily_kwh"].mean().reset_index()
-
-monthly.columns = ["Month", "Avg_kWh"]
-
-fig_month = px.line(
-    monthly,
-    x="Month",
-    y="Avg_kWh",
-    markers=True
-)
-
-fig_month.update_layout(template="plotly_dark")
-st.plotly_chart(fig_month, use_container_width=True)
+st.plotly_chart(plot_monthly_trend(daily_data), use_container_width=True)
 
 # ------------------------------------------------
 # Weekday Heatmap
 # ------------------------------------------------
 st.subheader("🔥 Weekly Demand Pattern")
-
-heat_df = station_df.copy()
-heat_df["Weekday"] = heat_df["date"].dt.day_name()
-
-pivot = heat_df.pivot_table(
-    values="daily_kwh",
-    index="Weekday",
-    aggfunc="mean"
-).reindex([
-    "Monday","Tuesday","Wednesday","Thursday",
-    "Friday","Saturday","Sunday"
-])
-
-fig_heat = px.imshow(
-    pivot,
-    text_auto=True,
-    aspect="auto",
-    color_continuous_scale="Turbo"
-)
-
-fig_heat.update_layout(template="plotly_dark")
-st.plotly_chart(fig_heat, use_container_width=True)
+st.plotly_chart(plot_weekday_heatmap(station_df), use_container_width=True)
 
 # ------------------------------------------------
 # Top Stations
 # ------------------------------------------------
 st.subheader("🏆 Top 10 High Demand Stations")
-
-top_stations = daily_data.groupby("stationID")["daily_kwh"] \
-    .mean().sort_values(ascending=False).head(10)
-
-fig_top = px.bar(
-    x=top_stations.index,
-    y=top_stations.values,
-    labels={"x":"Station","y":"Avg Daily kWh"}
-)
-
-fig_top.update_layout(template="plotly_dark")
-st.plotly_chart(fig_top, use_container_width=True)
-
+st.plotly_chart(plot_top_stations(daily_data), use_container_width=True)
 # ------------------------------------------------
 # Demand Distribution
 # ------------------------------------------------
 st.subheader("📊 Demand Distribution")
-
-fig_hist = px.histogram(
-    station_df,
-    x="daily_kwh",
-    nbins=30
-)
-
-fig_hist.update_layout(template="plotly_dark")
-st.plotly_chart(fig_hist, use_container_width=True)
-
+st.plotly_chart(plot_demand_distribution(station_df), use_container_width=True)
 # ------------------------------------------------
 # System-Wide Trend
 # ------------------------------------------------
 st.subheader("📈 System-Wide Demand Trend")
-
-system_trend = daily_data.groupby("date")["daily_kwh"].sum().reset_index()
-
-fig_sys = px.line(
-    system_trend,
-    x="date",
-    y="daily_kwh"
-)
-
-fig_sys.update_layout(template="plotly_dark")
-st.plotly_chart(fig_sys, use_container_width=True)
+st.plotly_chart(plot_system_trend(daily_data), use_container_width=True)
