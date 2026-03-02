@@ -93,7 +93,10 @@ EV-Charging-Demand-Forecasting/
 │ └── eda_analysis.py
 │
 ├── images/
-│ └── actual_vs_predicted.png
+│ └── Historical_Trend.png
+│ └── Monthly_Average_Demand.png
+│ └── Weekly_Demand_Pattern.png
+│ └── Demand_Distribution.png
 │
 ├── README.md
 ├── requirements.txt
@@ -114,6 +117,7 @@ Trained models are saved using joblib:
 ```python
 import joblib
 model = joblib.load("daily_model.pkl")
+
 
 
 
