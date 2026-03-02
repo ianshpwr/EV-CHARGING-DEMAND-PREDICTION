@@ -1,8 +1,6 @@
-#  EV Charging Demand Forecasting
+# Project 15: Intelligent EV Charging Demand Prediction & Agentic Infrastructure Planning
 
-A machine learning-based time-series forecasting system designed to predict EV charging demand at station and system levels.
-
-This project implements feature-engineered forecasting models using ensemble learning methods to estimate future energy demand (kWh) for electric vehicle charging infrastructure.
+## From Usage Analytics to Autonomous Grid & Station Planning
 
 ---
 
@@ -51,20 +49,19 @@ These features allow the model to capture temporal dependencies, seasonality, an
 
 ---
 
-##  Modeling Approach
+## Exploratory Data Analysis
 
-### 1️⃣ Demand Occurrence Prediction
-Model: RandomForestClassifier  
-Purpose: Predict whether demand will occur in the next period.
+### 📈 Historical Demand Trend
+![Historical Demand Trend](images/Historical_Trend.png)
 
-### 2️⃣ Demand Magnitude Forecasting
-Model: XGBoost Regressor  
-Purpose: Predict future energy demand (kWh).
+### 📅 Monthly Demand Trend
+![Monthly Demand Trend](images/Monthly_Average_Demand.png)
 
-Enhancements applied:
-- Log transformation of target
-- Outlier clipping (95th percentile)
-- Temporal train-test split (no data leakage)
+### 🔥 Weekly Demand Pattern
+![Weekly Demand Pattern](images/Weekly_Demand_Pattern.png)
+
+### Demand Distributions
+![Top 10 High Demand Stations](images/Demand_Distribution.png)
 
 ---
 
@@ -112,6 +109,11 @@ EV-Charging-Demand-Forecasting/
 
 ---
 
+## Deployed Link
+
+[Hosted Application](https://evpreds.streamlit.app/)
+
+
 ## Model Persistence
 
 Trained models are saved using joblib:
@@ -119,4 +121,5 @@ Trained models are saved using joblib:
 ```python
 import joblib
 model = joblib.load("daily_model.pkl")
+
 
