@@ -78,10 +78,21 @@ EV-Charging-Demand-Forecasting/
 │
 ├── data/
 │ └── caltech_full.csv
+├── documentation/
+│ └── caltech_full.csv
+|
+├── images/
+│ └── Historical_Trend.png
+│ └── Monthly_Average_Demand.png
+│ └── Weekly_Demand_Pattern.png
+│ └── Demand_Distribution.png
 │
 ├── models/
 │ ├── daily_model.pkl
 │ └── station_encoder.pkl
+|
+├── notebooks/
+│ ├── forcasting.ipynb
 │
 ├── src/
 │ ├── main.py
@@ -91,12 +102,8 @@ EV-Charging-Demand-Forecasting/
 │ ├── predict.py
 │ ├── utils.py
 │ └── eda_analysis.py
-│
-├── images/
-│ └── Historical_Trend.png
-│ └── Monthly_Average_Demand.png
-│ └── Weekly_Demand_Pattern.png
-│ └── Demand_Distribution.png
+├── video/
+│ ├── Model_Mind_Section-D
 │
 ├── README.md
 ├── requirements.txt
@@ -117,6 +124,7 @@ Trained models are saved using joblib:
 ```python
 import joblib
 model = joblib.load("daily_model.pkl")
+
 
 
 
