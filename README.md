@@ -65,15 +65,8 @@ These features allow the model to capture temporal dependencies, seasonality, an
 
 ---
 
-##  Model Performance
+##  Evaluation Metrics
 
-Below is the comparison between actual and predicted daily demand values:
-
-![Actual vs Predicted Demand](images/actual_vs_predicted.png)
-
-The model successfully captures overall trend and seasonality patterns in EV demand.
-
-Evaluation Metrics:
 - MAE (Mean Absolute Error)
 - RMSE (Root Mean Squared Error)
 - R² Score
@@ -121,5 +114,6 @@ Trained models are saved using joblib:
 ```python
 import joblib
 model = joblib.load("daily_model.pkl")
+
 
 
