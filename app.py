@@ -216,6 +216,24 @@ if st.session_state.selected_prediction is not None:
     # ── TAB 1: STATION OVERVIEW ───────────────────────────────────
     with t1:
         st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Calculate Deltas
+        last = stats.get("last_demand")
+        last_delta_html = "Most recent recorded"
+        if last is not None and last > 0:
+            pct = ((pred - last) / last) * 100
+            color = "#1a9e5c" if pct >= 0 else "#e74c3c"
+            icon = "▲" if pct >= 0 else "▼"
+            last_delta_html = f"<span style='color:{color}; font-weight:600;'>{icon} {abs(pct):.1f}%</span> vs yesterday"
+            
+        avg7 = stats.get("avg_7")
+        avg7_delta_html = "Rolling mean"
+        if avg7 is not None and avg7 > 0:
+            pct = ((pred - avg7) / avg7) * 100
+            color = "#1a9e5c" if pct >= 0 else "#e74c3c"
+            icon = "▲" if pct >= 0 else "▼"
+            avg7_delta_html = f"<span style='color:{color}; font-weight:600;'>{icon} {abs(pct):.1f}%</span> vs 7-day avg"
+
         m1, m2, m3 = st.columns(3)
 
         with m1:
@@ -227,23 +245,21 @@ if st.session_state.selected_prediction is not None:
             </div>""", unsafe_allow_html=True)
 
         with m2:
-            last = stats.get("last_demand")
             last_str = f"{last:.1f} kWh" if last is not None else "—"
             st.markdown(f"""
             <div class="metric-card">
                 <div class="label">📅 Last Day Demand</div>
                 <div class="value">{last_str}</div>
-                <div class="delta">Most recent recorded</div>
+                <div class="delta">{last_delta_html}</div>
             </div>""", unsafe_allow_html=True)
 
         with m3:
-            avg7 = stats.get("avg_7")
             avg7_str = f"{avg7:.1f} kWh" if avg7 is not None else "—"
             st.markdown(f"""
             <div class="metric-card">
                 <div class="label">📈 7-Day Average</div>
                 <div class="value">{avg7_str}</div>
-                <div class="delta">Rolling mean</div>
+                <div class="delta">{avg7_delta_html}</div>
             </div>""", unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
