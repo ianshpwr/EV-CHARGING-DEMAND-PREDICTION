@@ -10,7 +10,15 @@ def train_daily_model(daily_model_df):
     """
     Train XGBoost model for next-day forecasting.
     """
-    daily_df = daily_df.sort_values("date").reset_index(drop=True)
+    daily_model_df = daily_model_df.sort_values("date").reset_index(drop=True)
+
+    # -----------------------------
+    # Add Cyclical Features
+    # -----------------------------
+    daily_model_df["sin_month"] = np.sin(2 * np.pi * daily_model_df["month"] / 12.0)
+    daily_model_df["cos_month"] = np.cos(2 * np.pi * daily_model_df["month"] / 12.0)
+    daily_model_df["sin_dow"]   = np.sin(2 * np.pi * daily_model_df["day_of_week"] / 7.0)
+    daily_model_df["cos_dow"]   = np.cos(2 * np.pi * daily_model_df["day_of_week"] / 7.0)
 
     upper_limit = daily_model_df["target_next_day"].quantile(0.95)
     # -----------------------------
@@ -41,7 +49,11 @@ def train_daily_model(daily_model_df):
         "rolling_14",
         "day_of_week",
         "month",
-        "is_weekend"
+        "is_weekend",
+        "sin_month",
+        "cos_month",
+        "sin_dow",
+        "cos_dow"
     ]
     # -----------------------------
     # 4. Train-test split (time-based)
@@ -86,10 +98,16 @@ def train_daily_model(daily_model_df):
     print("Daily MAE:", mean_absolute_error(y_test, pred))
     print("Daily R2:", r2_score(y_test, pred))
 
-    joblib.dump(model, "models/daily_model.pkl")
-    joblib.dump(le, "models/station_encoder.pkl")
+    import pickle
+    with open("models/ev_demand_model.pkl", "wb") as f:
+        pickle.dump(model, f)
+    with open("models/features.pkl", "wb") as f:
+        pickle.dump(features, f)
+    with open("models/station_encoder.pkl", "wb") as f:
+        joblib.dump(le, f)
+
     # -----------------------------
     # 9. Save model & encoder
     # -----------------------------
-    print("Model saved successfully.")
+    print("Model saved successfully as ev_demand_model.pkl.")
     return model, le

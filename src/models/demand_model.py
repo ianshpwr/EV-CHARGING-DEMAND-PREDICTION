@@ -115,12 +115,18 @@ def predict_station_demand(df: pd.DataFrame, target_date=None) -> dict:
     features_df = pd.concat(frames, ignore_index=True)
 
     # ------------------------------------------------------------------
-    # 5. Calendar features
+    # 5. Calendar & Cyclical features
     # ------------------------------------------------------------------
     features_df["connectionTime"] = pd.to_datetime(features_df["connectionTime"])
     features_df["day_of_week"]    = features_df["connectionTime"].dt.dayofweek
     features_df["month"]          = features_df["connectionTime"].dt.month
     features_df["is_weekend"]     = (features_df["day_of_week"] >= 5).astype(int)
+
+    # Cyclical encodings
+    features_df["sin_month"] = np.sin(2 * np.pi * features_df["month"] / 12.0)
+    features_df["cos_month"] = np.cos(2 * np.pi * features_df["month"] / 12.0)
+    features_df["sin_dow"]   = np.sin(2 * np.pi * features_df["day_of_week"] / 7.0)
+    features_df["cos_dow"]   = np.cos(2 * np.pi * features_df["day_of_week"] / 7.0)
 
     # ------------------------------------------------------------------
     # 6. Take the most-recent row per station (latest known state)
