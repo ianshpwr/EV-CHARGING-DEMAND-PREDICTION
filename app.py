@@ -38,7 +38,7 @@ st.set_page_config(
     page_title="⚡ EV Intelligence Hub",
     page_icon="⚡",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # ── Custom CSS ──────────────────────────────────────────────────────
@@ -136,29 +136,26 @@ st.markdown(
 
 
 # ═══════════════════════════════════════════════════════════════════
-# ── SECTION 2: INPUT
+# ── SECTION 2: INPUT (SIDEBAR)
 # ═══════════════════════════════════════════════════════════════════
-st.markdown("### 🔌 Select Station & Date")
+with st.sidebar:
+    st.markdown("### 🔌 Prediction Controls", unsafe_allow_html=True)
+    st.markdown("<hr style='margin-top:0; border-color: rgba(126, 184, 247, 0.2);'>", unsafe_allow_html=True)
 
-inp_col1, inp_col2, inp_col3 = st.columns([2, 2, 1])
-
-with inp_col1:
     selected_station = st.selectbox(
-        "Charging Station",
+        "⚡ Charging Station",
         stations,
         key="station_selector",
         help="Select the EV charging station to forecast.",
     )
 
-with inp_col2:
     selected_date = st.date_input(
-        "Forecast Date",
+        "📅 Forecast Date",
         key="date_picker",
         help="Target date for the demand forecast.",
     )
 
-with inp_col3:
-    st.markdown("<br>", unsafe_allow_html=True)  # vertical align
+    st.markdown("<br>", unsafe_allow_html=True)
     run_clicked = st.button(
         "🚀 Run Prediction",
         width="stretch",
@@ -205,7 +202,7 @@ if run_clicked:
 
 
 # ═══════════════════════════════════════════════════════════════════
-# ── SECTION 3: OUTPUT CARDS  (shown only after prediction runs)
+# ── SECTION 3: TABS DIRECTORY  (shown only after prediction runs)
 # ═══════════════════════════════════════════════════════════════════
 if st.session_state.selected_prediction is not None:
     pred  = st.session_state.selected_prediction
@@ -213,143 +210,136 @@ if st.session_state.selected_prediction is not None:
     meta  = classify_demand(pred)
 
     st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
-    st.markdown("### 📊 Prediction Results")
+    
+    t1, t2, t3 = st.tabs(["📊 Station Overview", "🌍 System Network", "🤖 AI Diagnostics"])
 
-    # ── 3a. Metric Cards ──────────────────────────────────────────
-    m1, m2, m3 = st.columns(3)
+    # ── TAB 1: STATION OVERVIEW ───────────────────────────────────
+    with t1:
+        st.markdown("<br>", unsafe_allow_html=True)
+        m1, m2, m3 = st.columns(3)
 
-    with m1:
+        with m1:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="label">🔮 Predicted Demand</div>
+                <div class="value">{pred:.1f} <span style="font-size:16px;color:#aaa;">kWh</span></div>
+                <div class="delta">Next-day forecast</div>
+            </div>""", unsafe_allow_html=True)
+
+        with m2:
+            last = stats.get("last_demand")
+            last_str = f"{last:.1f} kWh" if last is not None else "—"
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="label">📅 Last Day Demand</div>
+                <div class="value">{last_str}</div>
+                <div class="delta">Most recent recorded</div>
+            </div>""", unsafe_allow_html=True)
+
+        with m3:
+            avg7 = stats.get("avg_7")
+            avg7_str = f"{avg7:.1f} kWh" if avg7 is not None else "—"
+            st.markdown(f"""
+            <div class="metric-card">
+                <div class="label">📈 7-Day Average</div>
+                <div class="value">{avg7_str}</div>
+                <div class="delta">Rolling mean</div>
+            </div>""", unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
         st.markdown(f"""
-        <div class="metric-card">
-            <div class="label">🔮 Predicted Demand</div>
-            <div class="value">{pred:.1f} <span style="font-size:16px;color:#aaa;">kWh</span></div>
-            <div class="delta">Next-day forecast</div>
-        </div>""", unsafe_allow_html=True)
-
-    with m2:
-        last = stats.get("last_demand")
-        last_str = f"{last:.1f} kWh" if last is not None else "—"
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="label">📅 Last Day Demand</div>
-            <div class="value">{last_str}</div>
-            <div class="delta">Most recent recorded</div>
-        </div>""", unsafe_allow_html=True)
-
-    with m3:
-        avg7 = stats.get("avg_7")
-        avg7_str = f"{avg7:.1f} kWh" if avg7 is not None else "—"
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="label">📈 7-Day Average</div>
-            <div class="value">{avg7_str}</div>
-            <div class="delta">Rolling mean</div>
-        </div>""", unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # ── 3b. Status Card ───────────────────────────────────────────
-    st.markdown("### 🚨 Demand Status")
-    st.markdown(f"""
-    <div class="status-card" style="
-        background:{meta['bg']};
-        border-color:{meta['color']};
-    ">
-        <h3 style="color:{meta['color']};">{meta['emoji']} {meta['label']}</h3>
-        <p>Station <strong>{selected_station}</strong> — predicted
-           <strong>{pred:.1f} kWh</strong> for {selected_date}</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # ── 3c. Historical trend chart ─────────────────────────────────
-    st.markdown("##### 📈 Historical Demand — Last 60 Days")
-    st.plotly_chart(
-        plot_historical_trend(station_df, selected_date, pred),
-        width="stretch",
-    )
-
-    # ── 3d. AI Recommendation ─────────────────────────────────────
-    st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
-    st.markdown("### 🤖 AI Agent Recommendation")
-
-    ai_col, _ = st.columns([1, 3])
-    with ai_col:
-        gen_clicked = st.button(
-            "⚡ Generate AI Recommendation",
-            width="stretch",
-            key="run_groq_btn",
-        )
-
-    if gen_clicked:
-        with st.spinner("🧠 Groq LLM analysing station…"):
-            result = generate_recommendation(selected_station, pred)
-            st.session_state.groq_result = result
-
-    # Display agent output
-    if st.session_state.groq_result is not None:
-        result = st.session_state.groq_result
-        status      = result.get("status", "Unknown")
-        recs        = result.get("recommendations", [])
-        reasoning   = result.get("reasoning", "")
-
-        # Status badge
-        badge_style = {
-            "normal":     ("#1a9e5c", "#e6faf1", "🟢"),
-            "high load":  ("#c28500", "#fffbe6", "🟡"),
-            "overloaded": ("#c0392b", "#fdecea", "🔴"),
-        }
-        key_lower = status.lower()
-        bkey  = next((k for k in badge_style if k in key_lower), "normal")
-        color, bg, emoji = badge_style[bkey]
-
-        st.markdown(f"""
-        <div class="status-card" style="background:{bg}; border-color:{color};">
-            <h3 style="color:{color};">{emoji} Agent Status: {status}</h3>
-            <p>Station <strong>{selected_station}</strong> — {pred:.1f} kWh forecast</p>
+        <div class="status-card" style="
+            background:{meta['bg']};
+            border-color:{meta['color']};
+        ">
+            <h3 style="color:{meta['color']};">{meta['emoji']} {meta['label']}</h3>
+            <p>Station <strong>{selected_station}</strong> — predicted
+               <strong>{pred:.1f} kWh</strong> for {selected_date}</p>
         </div>
         """, unsafe_allow_html=True)
 
-        # Recommendations
-        st.markdown("#### ⚡ Recommendations")
-        for rec in recs:
-            st.markdown(
-                f'<div class="rec-item">• {rec}</div>',
-                unsafe_allow_html=True,
+        st.markdown("<br>##### 📈 Historical Demand — Last 60 Days", unsafe_allow_html=True)
+        st.plotly_chart(
+            plot_historical_trend(station_df, selected_date, pred),
+            width="stretch",
+        )
+
+    # ── TAB 2: SYSTEM NETWORK ─────────────────────────────────────
+    with t2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.session_state.predictions_dict:
+            st.markdown("##### 🌍 System-Wide Predicted Load Map")
+            st.plotly_chart(plot_system_map(st.session_state.predictions_dict), width="stretch")
+            st.markdown("<br>", unsafe_allow_html=True)
+
+        d1, d2 = st.columns(2)
+
+        with d1:
+            st.markdown("##### 🏆 Top 10 High-Demand Stations")
+            st.plotly_chart(plot_top_stations(daily_data), width="stretch")
+
+        with d2:
+            st.markdown("##### 📊 Demand Distribution (Selected Station)")
+            st.plotly_chart(plot_demand_distribution(station_df), width="stretch")
+
+        st.markdown("##### 🔥 Weekly Pattern — Selected Station")
+        st.plotly_chart(plot_weekday_heatmap(station_df), width="stretch")
+
+        st.markdown("##### 📅 Monthly Average Demand (System-Wide)")
+        st.plotly_chart(plot_monthly_trend(daily_data), width="stretch")
+
+        st.markdown("##### 📈 System-Wide Daily Demand Trend")
+        st.plotly_chart(plot_system_trend(daily_data), width="stretch")
+
+
+    # ── TAB 3: AI DIAGNOSTICS ──────────────────────────────────────
+    with t3:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("### 🤖 Agentic Demand Diagnostics")
+        st.markdown("Get an automated analysis report using Groq LLM detailing grid health and actions.")
+
+        ai_col, _ = st.columns([1, 2])
+        with ai_col:
+            gen_clicked = st.button(
+                "⚡ Generate AI Report",
+                width="stretch",
+                key="run_groq_btn",
             )
 
-        # Reasoning
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("#### 📊 Agent Reasoning")
-        st.info(reasoning)
+        if gen_clicked:
+            with st.spinner("🧠 Groq LLM analyzing system..."):
+                result = generate_recommendation(selected_station, pred)
+                st.session_state.groq_result = result
 
+        if st.session_state.groq_result is not None:
+            result = st.session_state.groq_result
+            status      = result.get("status", "Unknown")
+            recs        = result.get("recommendations", [])
+            reasoning   = result.get("reasoning", "")
 
-# ═══════════════════════════════════════════════════════════════════
-# ── SECTION 4: DASHBOARD  (collapsible — uses full predictions dict)
-# ═══════════════════════════════════════════════════════════════════
-st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
+            badge_style = {
+                "normal":     ("#1a9e5c", "#e6faf1", "🟢"),
+                "high load":  ("#c28500", "#fffbe6", "🟡"),
+                "overloaded": ("#c0392b", "#fdecea", "🔴"),
+            }
+            key_lower = status.lower()
+            bkey  = next((k for k in badge_style if k in key_lower), "normal")
+            color, bg, emoji = badge_style[bkey]
 
-with st.expander("📊 System Dashboard — All Stations", expanded=False):
+            st.markdown(f"""
+            <div class="status-card" style="background:{bg}; border-color:{color}; margin-top: 1rem;">
+                <h3 style="color:{color};">{emoji} Agent Status: {status}</h3>
+                <p>Station <strong>{selected_station}</strong> — {pred:.1f} kWh forecast</p>
+            </div>
+            """, unsafe_allow_html=True)
 
-    if st.session_state.predictions_dict:
-        st.markdown("##### 🌍 System-Wide Predicted Load Map")
-        st.plotly_chart(plot_system_map(st.session_state.predictions_dict), width="stretch")
-        st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("#### ⚡ Recommendations")
+            for rec in recs:
+                st.markdown(
+                    f'<div class="rec-item">• {rec}</div>',
+                    unsafe_allow_html=True,
+                )
 
-    d1, d2 = st.columns(2)
-
-    with d1:
-        st.markdown("##### 🏆 Top 10 High-Demand Stations")
-        st.plotly_chart(plot_top_stations(daily_data), width="stretch")
-
-    with d2:
-        st.markdown("##### 📊 Demand Distribution (Selected Station)")
-        st.plotly_chart(plot_demand_distribution(station_df), width="stretch")
-
-    st.markdown("##### 🔥 Weekly Pattern — Selected Station")
-    st.plotly_chart(plot_weekday_heatmap(station_df), width="stretch")
-
-    st.markdown("##### 📅 Monthly Average Demand (System-Wide)")
-    st.plotly_chart(plot_monthly_trend(daily_data), width="stretch")
-
-    st.markdown("##### 📈 System-Wide Daily Demand Trend")
-    st.plotly_chart(plot_system_trend(daily_data), width="stretch")
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("#### 📊 Agent Reasoning")
+            st.info(reasoning)
