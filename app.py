@@ -166,7 +166,7 @@ if run_clicked:
     with st.spinner("⚙️ Running ML model across all stations…"):
         try:
             raw_df      = load_raw_csv()
-            predictions = predict_station_demand(raw_df)
+            predictions = predict_station_demand(raw_df, target_date=selected_date)
             st.session_state.predictions_dict = predictions
 
             matched_key = resolve_station_key(selected_station, predictions)

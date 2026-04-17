@@ -26,7 +26,7 @@ def _load_artifacts():
     return model, feature_list
 
 
-def predict_station_demand(df: pd.DataFrame) -> dict:
+def predict_station_demand(df: pd.DataFrame, target_date=None) -> dict:
     """
     Predict next-day EV charging demand for every station in df.
 
@@ -57,6 +57,18 @@ def predict_station_demand(df: pd.DataFrame) -> dict:
     df = df.copy()
     df["connectionTime"] = pd.to_datetime(df["connectionTime"], errors="coerce")
     df = df.dropna(subset=["connectionTime"])
+
+    if target_date is not None:
+        # Filter all records strictly before the target date
+        import datetime
+        if isinstance(target_date, str):
+            t_date = pd.to_datetime(target_date).date()
+        elif isinstance(target_date, datetime.datetime):
+            t_date = target_date.date()
+        else:
+            t_date = target_date # assumes datetime.date
+            
+        df = df[df["connectionTime"].dt.date < t_date]
 
     if df.empty:
         return {}
