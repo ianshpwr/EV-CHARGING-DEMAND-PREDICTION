@@ -71,14 +71,29 @@ def plot_historical_trend(
 
     # 6: Fix prediction overlay
     if prediction is not None and selected_date is not None:
-        next_day = max_date + pd.Timedelta(days=1)
-        fig.add_trace(go.Scatter(
-            x=[next_day],
-            y=[prediction],
-            mode="markers",
-            name="Forecast",
-            marker=dict(size=14, color="#FFD700", symbol="star"),
-        ))
+        target_ts = pd.to_datetime(selected_date)
+        past_data = daily[daily["date"] < target_ts]
+
+        if not past_data.empty:
+            last_date = past_data["date"].iloc[-1]
+            last_val = past_data["kwh"].iloc[-1]
+            
+            fig.add_trace(go.Scatter(
+                x=[last_date, target_ts],
+                y=[last_val, prediction],
+                mode="lines+markers",
+                name="Forecast Trend",
+                line=dict(color="#FFD700", width=2, dash="dash"),
+                marker=dict(size=10, color="#FFD700", symbol="star"),
+            ))
+        else:
+            fig.add_trace(go.Scatter(
+                x=[target_ts],
+                y=[prediction],
+                mode="markers",
+                name="Forecast",
+                marker=dict(size=14, color="#FFD700", symbol="star"),
+            ))
 
     fig.update_layout(
         height=400,
