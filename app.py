@@ -48,39 +48,55 @@ st.markdown("""
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
 .metric-card {
-    background: linear-gradient(135deg, #1e1e2e 0%, #2a2a3e 100%);
-    border: 1px solid #3a3a5c;
-    border-radius: 12px;
-    padding: 20px 24px;
+    background: rgba(30, 30, 46, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(126, 184, 247, 0.2);
+    border-radius: 16px;
+    padding: 24px;
     text-align: center;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
-.metric-card .label  { font-size: 13px; color: #aaa; margin-bottom: 6px; }
-.metric-card .value  { font-size: 28px; font-weight: 700; color: #ffffff; }
-.metric-card .delta  { font-size: 12px; color: #7EB8F7; margin-top: 4px; }
+.metric-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px 0 rgba(126, 184, 247, 0.15);
+    border-color: rgba(126, 184, 247, 0.5);
+}
+.metric-card .label  { font-size: 14px; font-weight: 500; color: #a1a1aa; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+.metric-card .value  { font-size: 32px; font-weight: 800; color: #ffffff; text-shadow: 0 0 10px rgba(255,255,255,0.2); }
+.metric-card .delta  { font-size: 13px; font-weight: 600; color: #7EB8F7; margin-top: 8px; }
 
 .status-card {
-    padding: 18px 24px;
+    background: rgba(30, 30, 46, 0.6);
+    backdrop-filter: blur(8px);
+    padding: 20px 24px;
     border-radius: 12px;
     border-left: 5px solid;
     margin: 16px 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
 }
-.status-card h3 { margin: 0 0 4px; font-size: 20px; }
-.status-card p  { margin: 0; font-size: 14px; color: #ccc; }
+.status-card h3 { margin: 0 0 6px; font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+.status-card p  { margin: 0; font-size: 15px; color: #d1d5db; }
 
 .rec-item {
-    background: #1e1e2e;
-    border-radius: 8px;
-    padding: 10px 16px;
-    margin: 6px 0;
+    background: rgba(30, 30, 46, 0.5);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 8px 0;
     border-left: 3px solid #7EB8F7;
-    font-size: 14px;
-    color: #ddd;
+    font-size: 15px;
+    color: #e5e7eb;
+    transition: background 0.2s;
+}
+.rec-item:hover {
+    background: rgba(42, 42, 62, 0.8);
 }
 
 .section-divider {
     border: none;
-    border-top: 1px solid #2a2a3e;
-    margin: 32px 0;
+    border-top: 1px solid rgba(126, 184, 247, 0.1);
+    margin: 36px 0;
 }
 </style>
 """, unsafe_allow_html=True)
