@@ -213,3 +213,52 @@ def plot_system_trend(daily_data: pd.DataFrame) -> go.Figure:
     )
     fig.update_layout(height=350, **_LAYOUT_DEFAULTS)
     return fig
+
+
+# ------------------------------------------------------------------
+# 7. Geospatial Map  (system-wide load)
+# ------------------------------------------------------------------
+def plot_system_map(predictions_dict: dict) -> go.Figure:
+    """Scatter mapbox of stations colored/sized by predicted load."""
+    import numpy as np
+    
+    if not predictions_dict:
+        return go.Figure()
+        
+    stations = list(predictions_dict.keys())
+    loads = [max(v, 0.1) for v in predictions_dict.values()] # ensure positive for size
+    
+    # Generate mock coordinates around Caltech (34.1377, -118.1253)
+    np.random.seed(42)
+    lats = 34.1377 + np.random.uniform(-0.005, 0.005, len(stations))
+    lons = -118.1253 + np.random.uniform(-0.005, 0.005, len(stations))
+    
+    df_map = pd.DataFrame({
+        "Station": stations,
+        "Load (kWh)": loads,
+        "lat": lats,
+        "lon": lons
+    })
+    
+    fig = px.scatter_mapbox(
+        df_map, 
+        lat="lat", 
+        lon="lon", 
+        color="Load (kWh)", 
+        size="Load (kWh)",
+        color_continuous_scale="Plasma",
+        hover_name="Station", 
+        hover_data={"lat": False, "lon": False, "Load (kWh)": ":.1f"},
+        zoom=14, 
+        center={"lat": 34.1377, "lon": -118.1253},
+        mapbox_style="carto-darkmatter"
+    )
+    
+    fig.update_layout(
+        height=450,
+        margin={"r":0,"t":0,"l":0,"b":0},
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
+

@@ -28,6 +28,7 @@ from src.charts import (
     plot_top_stations,
     plot_demand_distribution,
     plot_system_trend,
+    plot_system_map,
 )
 
 # ═══════════════════════════════════════════════════════════════════
@@ -328,6 +329,11 @@ if st.session_state.selected_prediction is not None:
 st.markdown('<hr class="section-divider">', unsafe_allow_html=True)
 
 with st.expander("📊 System Dashboard — All Stations", expanded=False):
+
+    if st.session_state.predictions_dict:
+        st.markdown("##### 🌍 System-Wide Predicted Load Map")
+        st.plotly_chart(plot_system_map(st.session_state.predictions_dict), width="stretch")
+        st.markdown("<br>", unsafe_allow_html=True)
 
     d1, d2 = st.columns(2)
 
