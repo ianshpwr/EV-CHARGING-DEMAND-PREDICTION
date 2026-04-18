@@ -4,6 +4,7 @@ import joblib
 from sklearn.preprocessing import LabelEncoder
 from xgboost import XGBRegressor
 from sklearn.metrics import mean_absolute_error, r2_score
+import pickle
 
 
 def train_daily_model(daily_model_df):
@@ -98,7 +99,7 @@ def train_daily_model(daily_model_df):
     print("Daily MAE:", mean_absolute_error(y_test, pred))
     print("Daily R2:", r2_score(y_test, pred))
 
-    import pickle
+    # 
     with open("models/ev_demand_model.pkl", "wb") as f:
         pickle.dump(model, f)
     with open("models/features.pkl", "wb") as f:
@@ -111,3 +112,4 @@ def train_daily_model(daily_model_df):
     # -----------------------------
     print("Model saved successfully as ev_demand_model.pkl.")
     return model, le
+
