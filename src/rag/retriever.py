@@ -12,6 +12,11 @@ To activate:
 Current behaviour: returns empty list (no-op).
 """
 
+# This RAG module is currently not active in the production pipeline.
+# The system operates without retrieval, and recommendations are generated
+# solely using ML predictions and LLM reasoning.
+# This module is included for future extensibility.
+
 from __future__ import annotations
 
 from typing import List
