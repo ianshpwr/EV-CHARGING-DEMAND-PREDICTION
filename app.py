@@ -35,7 +35,7 @@ from src.charts import (
 # PAGE CONFIG
 # ═══════════════════════════════════════════════════════════════════
 st.set_page_config(
-    page_title="⚡ EV Intelligence Hub",
+    page_title= "EV Intelligence Hub",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -177,7 +177,7 @@ if run_clicked:
     # Reset downstream results when re-running
     st.session_state.groq_result = None
 
-    with st.spinner("⚙️ Running ML model across all stations…"):
+    with st.spinner("Running ML model across all stations…"):
         try:
             raw_df      = load_raw_csv()
             predictions = predict_station_demand(raw_df, target_date=selected_date)
@@ -188,12 +188,12 @@ if run_clicked:
             if matched_key is not None:
                 st.session_state.selected_prediction = float(predictions[matched_key])
                 st.session_state.station_stats       = get_station_stats(station_df)
-                st.success(f"✅ Prediction ready for **{selected_station}**", icon="⚡")
+                st.success(f"Prediction ready for **{selected_station}**", icon="⚡")
             else:
                 st.session_state.selected_prediction = None
                 sample_keys = list(predictions.keys())[:5]
                 st.warning(
-                    f"⚠️ Station **{selected_station}** not found in predictions. "
+                    f"Station **{selected_station}** not found in predictions. "
                     f"Sample available keys: `{sample_keys}`"
                 )
 

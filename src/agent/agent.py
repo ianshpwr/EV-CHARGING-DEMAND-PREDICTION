@@ -24,13 +24,15 @@ Returns a structured dict:
 import os
 import re
 from groq import Groq
+from dotenv import load_dotenv  # ← ye add karo
+
+load_dotenv()  # ← ye add karo
 
 # ------------------------------------------------------------------
 # API key — reads GROQ_API_KEY env var, falls back to project key
 # ------------------------------------------------------------------
 _GROQ_API_KEY = os.environ.get(
     "GROQ_API_KEY",
-    "YOUR_API_KEY",  # project default
 )
 
 _client: Groq | None = None
