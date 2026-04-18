@@ -122,7 +122,7 @@ def predict_station_demand(df):
     latest_data['predicted_delta'] = delta_pred
     latest_data['predicted_kwh'] = (
         latest_data['daily_kwh'] + latest_data['predicted_delta']
-    )
+    ).clip(lower=0)
 
     return latest_data['predicted_kwh'].to_dict()
 
