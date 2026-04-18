@@ -16,6 +16,11 @@ Returns a structured dict:
     }
 """
 
+
+# This module combines machine learning demand predictions with LLM-based reasoning.
+# It takes predicted EV charging demand as input and generates structured,
+# actionable recommendations for infrastructure optimization.
+
 import os
 import re
 from groq import Groq
