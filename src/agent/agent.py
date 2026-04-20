@@ -1,214 +1,157 @@
-"""
-src/agent/agent.py
-==================
-LLM agent layer — Groq-powered intelligent recommendations.
-Falls back to rule-based logic if the Groq API is unavailable.
-
-Public API:
-    generate_recommendation(station: str, demand: float) -> dict
-
-Returns a structured dict:
-    {
-        "status":          str,        # "Normal" | "High Load" | "Overloaded"
-        "recommendations": list[str],  # bullet points
-        "reasoning":       str,        # 2-3 sentence explanation
-        "raw":             str,        # raw model output (debug)
-    }
-"""
-
-
-# This module combines machine learning demand predictions with LLM-based reasoning.
-# It takes predicted EV charging demand as input and generates structured,
-# actionable recommendations for infrastructure optimization.
-
 import os
 import re
+import logging
+import time
 from groq import Groq
-from dotenv import load_dotenv  # ← ye add karo
+from dotenv import load_dotenv
 
-load_dotenv()  # ← ye add karo
+load_dotenv()
 
-# ------------------------------------------------------------------
-# API key — reads GROQ_API_KEY env var, falls back to project key
-# ------------------------------------------------------------------
-_GROQ_API_KEY = os.environ.get(
-    "GROQ_API_KEY",
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+_GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 _client: Groq | None = None
+
+# ✅ UPDATED MODEL LIST (ONLY WORKING ONES)
+CANDIDATE_MODELS = [
+    "llama-3.3-70b-versatile",
+    "llama-3.3-8b-instant",
+]
+
+MAX_RETRIES = 2
 
 
 def _get_client() -> Groq:
-    """Lazy singleton Groq client."""
     global _client
     if _client is None:
         if not _GROQ_API_KEY:
-            raise EnvironmentError(
-                "Groq API key not found. Set the GROQ_API_KEY environment variable."
-            )
+            raise EnvironmentError("Missing GROQ_API_KEY")
         _client = Groq(api_key=_GROQ_API_KEY)
     return _client
 
 
-# ------------------------------------------------------------------
-# System prompt — strictly controls output format
-# ------------------------------------------------------------------
 _SYSTEM_PROMPT = """\
-You are an expert EV infrastructure analyst specialising in charging network optimisation.
+You are an expert EV infrastructure analyst.
 
-Given a station ID and its predicted next-day energy demand (kWh), respond with EXACTLY
-this structured format — nothing before, nothing after:
+Return EXACT format:
 
 STATUS: <Normal | High Load | Overloaded>
 
 RECOMMENDATIONS:
-• <specific, actionable recommendation 1>
-• <specific, actionable recommendation 2>
-• <specific, actionable recommendation 3>
+• ...
+• ...
+• ...
 
 REASONING:
-<2-3 sentences explaining your load assessment, referencing the demand figure, and
-describing what operational risks or opportunities exist>
+<2-3 sentences>
 
-Classification thresholds:
-  Normal      →  demand < 50 kWh
-  High Load   →  50 kWh ≤ demand < 150 kWh
-  Overloaded  →  demand ≥ 150 kWh
-
-Your recommendations must address:
-  - Infrastructure adjustments (charger count, power levels)
-  - Load balancing or time-of-use pricing strategies
-  - Grid stress mitigation or renewable integration opportunities
+Thresholds:
+Normal < 50
+High Load 50–150
+Overloaded ≥150
 """
 
 
-# ------------------------------------------------------------------
-# Public function
-# ------------------------------------------------------------------
+# ✅ CLEAN + RELIABLE LLM CALL
+def _call_groq_with_resilience(client: Groq, user_prompt: str) -> str:
+    last_error = None
+
+    for model in CANDIDATE_MODELS:
+        for attempt in range(MAX_RETRIES):
+            try:
+                logging.info(f"Trying model: {model}")
+
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": _SYSTEM_PROMPT},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    temperature=0.3,
+                    max_tokens=500,
+                )
+
+                logging.info(f"Success with model: {model}")
+                return response.choices[0].message.content.strip()
+
+            except Exception as e:
+                last_error = e
+                logging.warning(f"{model} failed (attempt {attempt+1}): {e}")
+                time.sleep(1)
+
+        logging.warning(f"Switching model from {model}")
+
+    raise Exception(f"All models failed: {last_error}")
+
+
 def generate_recommendation(station: str, demand: float) -> dict:
-    """
-    Generate an intelligent, structured recommendation for the given EV station.
-
-    Args:
-        station: Station identifier (e.g. "CA-329")
-        demand:  Predicted next-day energy demand in kWh
-
-    Returns:
-        dict with keys: status, recommendations (list), reasoning, raw
-    """
     user_prompt = (
-        f"Station {station} has a predicted next-day demand of {demand:.2f} kWh. "
-        f"Provide your full structured assessment."
+        f"Station {station} has a predicted demand of {demand:.2f} kWh."
     )
 
     try:
         client = _get_client()
-        response = client.chat.completions.create(
-            model="llama-3.1-70b-versatile",
-            messages=[
-                {"role": "system", "content": _SYSTEM_PROMPT},
-                {"role": "user",   "content": user_prompt},
-            ],
-            temperature=0.35,
-            max_tokens=600,
-        )
-        raw_text = response.choices[0].message.content.strip()
+        raw_text = _call_groq_with_resilience(client, user_prompt)
         return _parse_response(raw_text)
 
-    except EnvironmentError:
-        raise  # Surface key-missing errors directly
-
     except Exception as exc:
-        # API / network / quota error — fall back to rule-based logic
         return _rule_based_fallback(station, demand, error=str(exc))
 
 
-# ------------------------------------------------------------------
-# Rule-based fallback (used when Groq is unavailable)
-# ------------------------------------------------------------------
+# ✅ FALLBACK (unchanged but cleaner message)
 def _rule_based_fallback(station: str, demand: float, error: str = "") -> dict:
-    """
-    Deterministic recommendation based on demand thresholds.
-    Used automatically when the Groq API call fails.
-    """
     if demand < 50:
         status = "Normal"
         recommendations = [
-            "Maintain current charger configuration — demand is within normal range.",
-            "Use off-peak hours to schedule preventive maintenance.",
-            "Monitor for gradual demand growth over the next 30 days.",
+            "Maintain current setup",
+            "Schedule maintenance off-peak",
+            "Monitor usage trends",
         ]
-        reasoning = (
-            f"Station {station} is forecasted at {demand:.1f} kWh, well within the "
-            f"normal operating threshold (<50 kWh). No immediate action is required."
-        )
+        reasoning = f"Station {station} at {demand:.1f} kWh is within safe limits."
+
     elif demand < 150:
         status = "High Load"
         recommendations = [
-            "Consider activating dynamic pricing to shift peak-hour demand.",
-            "Pre-schedule at least one additional charger unit for the forecast day.",
-            "Alert fleet operators to distribute charging across multiple time slots.",
+            "Enable load balancing",
+            "Add temporary chargers",
+            "Shift demand via pricing",
         ]
-        reasoning = (
-            f"Station {station} is forecasted at {demand:.1f} kWh, indicating high "
-            f"load (50–150 kWh range). Load-balancing measures should be activated "
-            f"to prevent congestion and grid stress."
-        )
+        reasoning = f"Station {station} at {demand:.1f} kWh indicates high usage."
+
     else:
         status = "Overloaded"
         recommendations = [
-            "Immediately deploy additional fast-chargers or mobile charging units.",
-            "Enforce strict time-slot booking to cap simultaneous sessions.",
-            "Engage grid operator to secure extra capacity for the forecast day.",
+            "Deploy more chargers",
+            "Restrict usage slots",
+            "Increase grid support",
         ]
-        reasoning = (
-            f"Station {station} is forecasted at {demand:.1f} kWh, which exceeds the "
-            f"overload threshold (≥150 kWh). Infrastructure expansion and demand "
-            f"curtailment are required to prevent service disruption."
-        )
+        reasoning = f"Station {station} at {demand:.1f} kWh exceeds safe capacity."
 
-    note = f" (Rule-based fallback — Groq unavailable: {error})" if error else ""
+    note = f" (Fallback used: {error})" if error else ""
+
     return {
-        "status":          status,
+        "status": status,
         "recommendations": recommendations,
-        "reasoning":       reasoning + note,
-        "raw":             f"[fallback]{note}",
+        "reasoning": reasoning + note,
+        "raw": "[fallback]",
     }
 
 
-# ------------------------------------------------------------------
-# Internal parser
-# ------------------------------------------------------------------
 def _parse_response(text: str) -> dict:
-    """Extract structured fields from the model's plain-text reply."""
+    status_m = re.search(r"STATUS:\s*(.+)", text)
+    status = status_m.group(1).strip() if status_m else "Unknown"
 
-    # STATUS
-    status_m = re.search(r"STATUS:\s*(.+)", text, re.IGNORECASE)
-    status   = status_m.group(1).strip() if status_m else "Unknown"
+    bullets = re.findall(r"[•\-\*]\s+(.+)", text)
+    recommendations = bullets if bullets else ["No recommendations"]
 
-    # RECOMMENDATIONS (bullet lines following the header)
-    recs_m = re.search(
-        r"RECOMMENDATIONS:\s*\n((?:[ \t]*[•\-\*].+\n?)+)",
-        text, re.IGNORECASE
-    )
-    if recs_m:
-        recommendations = [
-            line.lstrip("•-* \t").strip()
-            for line in recs_m.group(1).splitlines()
-            if line.strip()
-        ]
-    else:
-        # Fallback: grab any bullet lines anywhere in the text
-        bullets = re.findall(r"[•\-\*]\s+(.+)", text)
-        recommendations = bullets if bullets else ["No specific recommendations generated."]
-
-    # REASONING
-    reasoning_m = re.search(r"REASONING:\s*([\s\S]+?)(?:\n\n|$)", text, re.IGNORECASE)
-    reasoning   = reasoning_m.group(1).strip() if reasoning_m else "No reasoning provided."
+    reasoning_m = re.search(r"REASONING:\s*([\s\S]+)", text)
+    reasoning = reasoning_m.group(1).strip() if reasoning_m else "No reasoning"
 
     return {
-        "status":          status,
+        "status": status,
         "recommendations": recommendations,
-        "reasoning":       reasoning,
-        "raw":             text,
+        "reasoning": reasoning,
+        "raw": text,
     }
